@@ -1,65 +1,129 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>RC Flight Weather</title>
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      margin: 0;
-      padding: 12px;
-      background: #f8f9fa;
-    }
-    .card {
-      background: white;
-      border-radius: 8px;
-      padding: 12px;
-      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
-    }
-    .wind {
-      font-size: 1.2em;
-      font-weight: bold;
-    }
-    .label {
-      color: #666;
-      font-size: 0.9em;
-    }
-  </style>
+<meta charset="UTF-8">
+<title>RC Flight Weather</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<style>
+  body {
+    font-family: Arial, sans-serif;
+    margin: 0;
+    padding: 12px;
+    background: #f4f6f8;
+  }
+
+  .card {
+    background: #ffffff;
+    border-radius: 10px;
+    padding: 14px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.12);
+    max-width: 420px;
+  }
+
+  h3 {
+    margin-top: 0;
+    margin-bottom: 8px;
+  }
+
+  .row {
+    margin-bottom: 6px;
+  }
+
+  .label {
+    color: #555;
+    font-size: 0.9em;
+  }
+
+  .value {
+    font-weight: bold;
+  }
+
+  .status {
+    padding: 8px;
+    border-radius: 6px;
+    text-align: center;
+    font-weight: bold;
+    margin-top: 10px;
+  }
+
+  .good { background: #d4edda; color: #155724; }
+  .marginal { background: #fff3cd; color: #856404; }
+  .poor { background: #f8d7da; color: #721c24; }
+
+  iframe {
+    border: none;
+    border-radius: 8px;
+    margin-top: 10px;
+    width: 100%;
+    height: 180px;
+  }
+</style>
 </head>
+
 <body>
-  <div class="card">
-    <h3>✈️ RC Flight Weather</h3>
-    <div id="weather">Loading...</div>
-  </div>
+<div class="card">
+  <h3>✈️ RC Flight Weather</h3>
+  <div id="weather">Loading weather...</div>
 
-  <script>
-    async function loadWeather() {
-      const pointResp = await fetch(
-        "https://api.weather.gov/points/41.9925,-79.9928",
-        { headers: { "Accept": "application/geo+json" } }
-      );
-      const pointData = await pointResp.json();
-      const forecastUrl = pointData.properties.forecastHourly;
+  <!-- Map -->
+  <iframe
+    src="https://www.openstreetmap.org/export/embed.html?bbox=-80.002%2C41.985%2C-79.983%2C41.999&layer=mapnik&marker=41.9925,-79.9928">
+  </iframe>
+</div>
 
-      const forecastResp = await fetch(forecastUrl);
-      const forecastData = await forecastResp.json();
-      const current = forecastData.properties.periods[0];
+<script>
+async function loadWeather() {
+  const pointUrl = "https://api.weather.gov/points/41.9925,-79.9928";
+  const pointResp = await fetch(pointUrl);
+  const pointData = await pointResp.json();
 
-      document.getElementById("weather").innerHTML = `
-        <div class="wind">
-          Wind: ${current.windSpeed} ${current.windDirection}
-        </div>
-        <div class="label">
-          Temp: ${current.temperature}°${current.temperatureUnit}
-        </div>
-        <div class="label">
-          Forecast: ${current.shortForecast}
-        </div>
-      `;
-    }
+  const forecastUrl = pointData.properties.forecastHourly;
+  const forecastResp = await fetch(forecastUrl);
+  const forecastData = await forecastResp.json();
 
-    loadWeather();
-    setInterval(loadWeather, 10 * 60 * 1000); // refresh every 10 min
-  </script>
+  const current = forecastData.properties.periods[0];
+
+  const windSpeed = parseInt(current.windSpeed);
+  const gusts = current.windGust ? parseInt(current.windGust) : null;
+
+  let statusClass = "good";
+  let statusText = "🟢 Good flying conditions";
+
+  if (windSpeed > 12 || (gusts && gusts > 18)) {
+    statusClass = "poor";
+    statusText = "🔴 Poor – Not recommended";
+  } else if (windSpeed > 8 || (gusts && gusts > 12)) {
+    statusClass = "marginal";
+    statusText = "🟡 Marginal – Experienced pilots";
+  }
+
+  document.getElementById("weather").innerHTML = `
+    <div class="row">
+      <span class="label">Wind:</span>
+      <span class="value">${current.windSpeed} ${current.windDirection}</span>
+    </div>
+    <div class="row">
+      <span class="label">Gusts:</span>
+      <span class="value">${current.windGust || "N/A"}</span>
+    </div>
+    <div class="row">
+      <span class="label">Temperature:</span>
+      <span class="value">${current.temperature}°${current.temperatureUnit}</span>
+    </div>
+    <div class="row">
+      <span class="label">Forecast:</span>
+      <span class="value">${current.shortForecast}</span>
+    </div>
+
+    <div class="status ${statusClass}">
+      ${statusText}
+    </div>
+  `;
+}
+
+loadWeather();
+setInterval(loadWeather, 10 * 60 * 1000);
+</script>
 </body>
 </html>
