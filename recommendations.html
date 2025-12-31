@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>RC Flight Recommendations</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+  body { font-family: Arial, sans-serif; margin:0; padding:12px; background:#f4f6f8; }
+  .card { background:#fff; border-radius:10px; padding:14px; box-shadow:0 2px 8px rgba(0,0,0,0.12); max-width:420px; margin:auto; }
+  h3 { margin-top:0; margin-bottom:8px; }
+  .status { padding:8px; border-radius:6px; text-align:center; font-weight:bold; margin-top:10px; }
+  .good { background:#d4edda; color:#155724; }
+  .marginal { background:#fff3cd; color:#856404; }
+  .poor { background:#f8d7da; color:#721c24; }
+  .hourly { display:flex; gap:6px; margin-top:10px; flex-wrap:wrap; overflow-x:hidden; justify-content:center; }
+  .hour { flex:0 0 auto; padding:6px; border-radius:6px; font-size:0.75em; text-align:center; min-width:60px; }
+  .hour.good { background:#d4edda; color:#155724; }
+  .hour.marginal { background:#fff3cd; color:#856404; }
+  .hour.poor { background:#f8d7da; color:#721c24; }
+</style>
+</head>
+<body>
+<div class="card">
+  <h3>✈️ Flight Recommendations</h3>
+  <div id="current-status">Loading...</div>
+  <div id="hourly-status"></div>
+</div>
+
+<script>
+async function loadRecommendations() {
+  const lat = 41.9925, lon = -79.9928;
+  const pointData = await (await fetch(`https://api.weather.gov/points/${lat},${lon}`)).json();
+  const forecastData = await (await fetch(pointData.properties.forecastHourly)).json();
+  const periods = forecastData.properties.periods;
+  const current = periods[0];
+
+  const wind = parseInt(current.windSpeed);
+  const gust = current.windGust ? parseInt(current.windGust) : null;
+
+  let statusClass="good", statusText="🟢 Good flying conditions";
+  if (wind>12 || (gust && gust>18)) { statusClass="poor"; statusText="🔴 Poor – Not recommended"; }
+  else if (wind>8 || (gust && gust>12)) { statusClass="marginal"; statusText="🟡 Marginal – Experienced pilots"; }
+
+  document.getElementById("current-status").innerHTML = `<div class="status ${statusClass}">${statusText}</div>`;
+
+  // Hourly next 6 hours
+  let hourlyHTML=`<h4 style="margin-top:10px;">⏱ Hourly Flight Recommendation</h4><div class="hourly">`;
+  periods.slice(0,6).forEach(p=>{
+    const hr=new Date(p.startTime).getHours();
+    const w=parseInt(p.windSpeed);
+    const g=p.windGust?parseInt(p.windGust):null;
+    let cls="good", label="Fly";
+    if (w>12 || (g && g>18)) { cls="poor"; label="No Fly"; }
+    else if (w>8 || (g && g>12)) { cls="marginal"; label="Marginal"; }
+    hourlyHTML+=`<div class="hour ${cls}"><div><strong>${hr}:00</strong></div><div>${label}</div></div>`;
+  });
+  hourlyHTML+="</div>";
+  document.getElementById("hourly-status").innerHTML = hourlyHTML;
+}
+
+loadRecommendations();
+setInterval(loadRecommendations,10*60*1000);
+</script>
+</body>
+</html>
