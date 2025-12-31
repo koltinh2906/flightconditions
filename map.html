@@ -6,23 +6,30 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <style>
   /* Responsive container for Windy map */
-  .responsive-iframe {
-    position: relative;
-    width: 100%;
-    height: 0;
-    padding-bottom: 60%; /* Aspect ratio: height/width. Adjust for taller map */
-  }
+.responsive-iframe {
+  position: relative;
+  width: 100%;
+  height: 0;
+  padding-bottom: 60%; /* default aspect ratio for desktop */
+}
 
-  .responsive-iframe iframe {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    border: none;
-    border-radius: 10px;
-    overflow: hidden;
+.responsive-iframe iframe {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  border: none;
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+/* Mobile adjustments */
+@media (max-width: 600px) {
+  .responsive-iframe {
+    padding-bottom: 40%; /* shorter map on small screens */
   }
+}
 </style>
 </head>
 <body>
