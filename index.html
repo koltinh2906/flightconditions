@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>RC Flight Weather</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 12px;
+      background: #f8f9fa;
+    }
+    .card {
+      background: white;
+      border-radius: 8px;
+      padding: 12px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+    }
+    .wind {
+      font-size: 1.2em;
+      font-weight: bold;
+    }
+    .label {
+      color: #666;
+      font-size: 0.9em;
+    }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h3>✈️ RC Flight Weather</h3>
+    <div id="weather">Loading...</div>
+  </div>
+
+  <script>
+    async function loadWeather() {
+      const pointResp = await fetch(
+        "https://api.weather.gov/points/41.9925,-79.9928",
+        { headers: { "Accept": "application/geo+json" } }
+      );
+      const pointData = await pointResp.json();
+      const forecastUrl = pointData.properties.forecastHourly;
+
+      const forecastResp = await fetch(forecastUrl);
+      const forecastData = await forecastResp.json();
+      const current = forecastData.properties.periods[0];
+
+      document.getElementById("weather").innerHTML = `
+        <div class="wind">
+          Wind: ${current.windSpeed} ${current.windDirection}
+        </div>
+        <div class="label">
+          Temp: ${current.temperature}°${current.temperatureUnit}
+        </div>
+        <div class="label">
+          Forecast: ${current.shortForecast}
+        </div>
+      `;
+    }
+
+    loadWeather();
+    setInterval(loadWeather, 10 * 60 * 1000); // refresh every 10 min
+  </script>
+</body>
+</html>
