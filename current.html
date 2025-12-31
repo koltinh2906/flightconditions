@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>RC Weather Conditions</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+  body {
+    font-family: Arial, sans-serif;
+    margin: 0;
+    padding: 12px;
+    background: #f4f6f8;
+  }
+  .card {
+    background: #ffffff;
+    border-radius: 10px;
+    padding: 14px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.12);
+    max-width: 420px;
+    margin: auto;
+  }
+  h3 { margin-top: 0; margin-bottom: 8px; }
+  .row { margin-bottom: 6px; }
+  .label { color: #555; font-size: 0.9em; }
+  .value { font-weight: bold; }
+</style>
+</head>
+<body>
+<div class="card">
+  <h3>✈️ Current Conditions</h3>
+  <div id="current-weather">Loading...</div>
+</div>
+
+<script>
+async function loadCurrent() {
+  const lat = 41.9925, lon = -79.9928;
+  const pointData = await (await fetch(`https://api.weather.gov/points/${lat},${lon}`)).json();
+  const forecastData = await (await fetch(pointData.properties.forecastHourly)).json();
+  const current = forecastData.properties.periods[0];
+
+  document.getElementById("current-weather").innerHTML = `
+    <div class="row"><span class="label">Wind:</span> <span class="value">${current.windSpeed} ${current.windDirection}</span></div>
+    <div class="row"><span class="label">Gusts:</span> <span class="value">${current.windGust || "N/A"}</span></div>
+    <div class="row"><span class="label">Temp:</span> <span class="value">${current.temperature}°${current.temperatureUnit}</span></div>
+    <div class="row"><span class="label">Forecast:</span> <span class="value">${current.shortForecast}</span></div>
+  `;
+}
+
+loadCurrent();
+setInterval(loadCurrent, 10*60*1000);
+</script>
+</body>
+</html>
